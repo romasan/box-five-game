@@ -1,0 +1,558 @@
+<head>
+<style>
+	body{
+		margin : 0px;
+		background : #eee;
+		background-image  :url('bg.png');
+	}
+	*{
+		font-family : Courier New;
+	}
+	
+	.selected{
+		background : #ff7;
+		border : 3px solid #00f;
+		margin : -1px;
+	}
+	.error{
+		background : #fee;
+		border : 3px solid #f00;
+	}
+	
+	.locked{
+		border : 1px solid #fff;
+	}
+	.point0{
+		background-image : url('broken.png');
+	}
+	.point1{
+		background-image : url('TL.png');
+	}
+	.point2{
+		background-image : url('TR.png');
+	}
+	.point3{
+		background-image : url('BL.png');
+	}
+	.point4{
+		background-image : url('RB.png');
+	}
+	.point5{
+		background-image : url('TB.png');
+	}
+	.point6{
+		background-image : url('RL.png');
+	}
+	
+	.level0{
+		background-image : url('bg0.png');
+	}
+	.level1{
+		background-image : url('bg1.png');
+	}
+	.level2{
+		background-image : url('bg2.png');
+	}
+	.level3{
+		background-image : url('bg3.png');
+	}
+	.level4{
+		background-image : url('bg4.png');
+	}
+	.level5{
+		background-image : url('bg5.png');
+	}
+	.level6{
+		background-image : url('bg6.png');
+	}
+	.level7{
+		background-image : url('bg7.png');
+	}
+	.level8{
+		background-image : url('bg8.png');
+	}
+	.level9{
+		background-image : url('bg9.png');
+	}
+	
+	.point8{
+		background-image : url('start.png');
+	}
+	.point9{
+		background-image : url('finish.png');
+	}
+	
+	.row{
+		display : block;
+	}
+	.column {
+		position : absolute;
+		width : 70px;
+		height : 70px;
+		text-align : center;
+		display : inline-block;
+		margin : 0px;
+		background-size : 100%
+	}
+	.hidden {
+		display : none;
+	}
+	
+	
+	.buttn{
+		position : absolute;
+		width : 10px;
+		height : 10px;
+		border-radius : 5px;
+		background : #1c1;
+		color : #fff;
+		border : 1px solid #000;
+	}
+	.inhistory{
+		background : #000;
+	}
+	#thislevel{
+		background : #393;
+	}
+	#youwin{
+		position : absolute;
+		background : #777;
+		color : #fff;
+		top : 200px;
+		left : 10px;
+		height : 70px;
+		border : 5px solid #333;
+		text-align : center;
+		font-size : 20pt;
+		padding-top : 40px;
+		border-radius :10px; 
+	}
+	#pointsbar{
+		background : #333;
+		color : #fff;
+		padding : 0px 10px 0px 10px;
+	}
+	.fill {
+		background : #33f;
+		border : 3px solid #00f;
+	}
+	#p0{
+		position : absolute;
+		top : 100px;
+		left : 100px;
+		backgrount-image : url('bg0.png');
+		background-size : 100px 100px;
+		width : 100px;
+		height :  100px
+	}
+	#map{
+		position : absolute;
+	}
+	
+</style>
+<script src="jquery.min.js"></script>
+<script>
+
+	Array.prototype.shuffle = function(b){
+		var i = this.length, j, t;
+		while(i){
+			j = Math.floor( ( i-- ) * Math.random() );
+			t = b && typeof this[i].shuffle!=='undefined' ? this[i].shuffle() : this[i];
+			this[i] = this[j];
+			this[j] = t;
+		}
+		return this;
+	};
+
+	var EMPTY = -1;
+	
+	var DWIDTH, DHEIGHT, SCALINGFACTOR, BANNERHEIGHT, GAMESPACE;
+	var SIZES = {
+		column : 0,
+		pointsbar : 20,
+		margin : 10// без масштабирования
+	}
+	var Game = {
+		width      		: 5,//9 | 7
+		height     		: 5,//6 | 9
+		colnum			: 5,
+//		points     		: 0,
+//		objectsnum 		: 6,//6
+//		level			: 1,
+		maxlevelsnum	: 9, // mappoints.length
+		up				: false,
+//		start			: 0,
+//		finish			: 0,
+//		stepstime		: 5,//5, in sec.
+//		run				: false,
+		map : [],
+		mapzero : function(){ // забивает карту 0
+			for(var i = 0; i < this.height; i++) {
+				this.map[i] = [];
+				for(var j = 0; j < this.width; j++) {
+					this.map[i][j] = 0;
+				}
+			}
+		},
+		randmap : function(){ // рандомно забивает кату
+			//var next = 0;
+			//for( var i = 0; i < Game.height; i++ ){Game.map[i] = []}
+			var a = [];
+			for( var i = 0; i < ( Game.height * Game.width - 1); i++ ){a[i] = i;}
+			a.shuffle();
+			var cnt = 0;
+			for( var i = 0; i < Game.height; i++ ){
+				Game.map[i] = [];
+				for( var j = 0; j < Game.width; j++ ){
+					//var ind = ( ( Math.random() * (Game.width * Game.height) )|0 );
+					//for(;a[ind] !== 'undefined';){
+					//	ind = ( ( Math.random() * (Game.width * Game.height) )|0 );
+					//}
+					//a[ind] = true;
+					//console.log('log : ' + i + ' ' + j + ' ' + cnt + ' ');// + Game.map[i][j]);
+					Game.map[i][j] = (cnt < (Game.width * Game.height - 1))?a[cnt]:EMPTY;
+					cnt++
+				}
+			}
+/*
+			for( var i = 0; i < (Game.width * Game.height); i++ ) {
+				var x = (Math.random() * Game.width)|0;//i - ( (i / Game.width)|0 * Game.width );
+				var y = (Math.random() * Game.height)|0;//(i / Game.width)|0;
+				if(typeof(Game.map[y][x]) === 'undefined'){
+					if( i < (Game.width * Game.height - 1) ){
+						Game.map[y][x] = i;
+					} else{
+						Game.map[y][x] = EMPTY;
+					}
+				} else{
+					i--;
+				}
+			}
+*/
+		},
+		checkwin : function(){
+			for( var i = 0; i < (Game.width * Game.height - 1); i++ ) {
+				var x = i - ( ( (i / Game.width)|0 ) * Game.width );
+				var y = (i / Game.width)|0;
+				//Game.map[y][x] = i;
+				if( Game.map[y][x] !== i ){
+					return false;
+				}
+				//console.log(x + ' ' + y);
+				//if(Game.map[y][x] !== i){return false;}
+			}
+			return true;
+		},
+		logmap : function(){// выводит первоначальный массив в консоль
+			for(var i = 0; i < this.height; i++) {
+				var str = "";
+				for(var j = 0; j < this.width; j++) {
+					str += this.map[i][j] + ' ';
+				}
+				console.log(str);
+			}
+		},
+		logarr2 : function(a){// выводит в консоль двумерный массив
+			for(i in a) {
+				var str = "";
+				for(j in a[i]) {
+					str += a[i][j] + ' ';
+				}
+				console.log(str);
+			}
+		},
+		drawcolumn : function(x, y){//j, i
+			//Game.bg.size //(width === height)
+			//Game.columnsize
+			//_x = (Game.map[y][x]
+			console.log(Game.map[y][x]);
+			var _x = Game.map[y][x] - ( ( (Game.map[y][x] / Game.width)|0 ) * Game.width );
+			var _y = (Game.map[y][x] / Game.width)|0;
+			//bg.left = _x * Game.columnsize;//Game.size === Game.width === Game.height
+			//bg.top = _y * Game.columnsize;//Game.size === Game.width === Game.height
+			//bg.top
+			console.log(_x + ' ' + _y);
+			var l = $('<div>')
+				.addClass('column')
+				.data('x', x).data('y', y).data('inmap', Game.map[y][x])
+				.css({
+					//left : ( SIZES.column * x ) + ( (GAMESPACE.X - SIZES.column * Game.width) / 2 ),
+					left   : ( SIZES.column * x ),
+					top    : ( SIZES.column * y ),
+					width  : SIZES.column,
+					height : SIZES.column,
+					'background-position' : ( '-' + (_x * SIZES.column) + 'px ' + '-' + (_y * SIZES.column) + 'px' ),
+					'background-size' : GAMESPACE.X
+				});
+			if(Game.map[y][x] === EMPTY){
+				$(l).attr('id', 'empty');
+			} else{
+				$(l).addClass('level' + localStorage['box5level'])
+			}
+			return l;
+		},
+//		swap : function(a, b){
+//			var tmp = a;
+//			a = b;
+//			b = tmp;
+//		},
+		draw : function(){
+			$('#map').html('');
+			for(var i = 0; i < Game.height; i++) {
+				for(var j = 0; j < Game.width; j++) {
+					$('#map').append(
+//						if( Game.map[y][x] !== EMPTY ){
+							this.drawcolumn(j, i)
+//						}
+					);
+				}
+				
+
+			}
+			$('#level').html(localStorage['box5level']);
+			//$('#map').append(this.drawcolumn(Game.start, Game.height, 8));
+			//$('#map').append(this.drawcolumn(Game.finish, -1, 9));
+			//$('.point8').addClass('fill');
+			
+			// click's ------------------------------------
+
+			$('#map>div.column').click(function(){
+				if($(this).hasClass('empty')){return false;}
+				console.log('click1');
+				var thisc = {
+					x : $(this).offset().left,
+					y : $(this).offset().top,
+					dx : $(this).data('x'),
+					dy : $(this).data('y')
+				}
+				var c = Game.checkbeside(thisc.dx, thisc.dy);
+				console.log('boobs0 ' + thisc.dx + ' ' + thisc.dy);
+				if(c){
+					localStorage['box5points'] = parseInt(localStorage['box5points']) + 1;
+					$('#points').html(localStorage['box5points']);
+					console.log('boobs1');
+					var l = $('#empty');
+					var emptyc = {
+						x : $(l).offset().left,
+						y : $(l).offset().top,
+						dx : $(l).data('x'),
+						dy : $(l).data('y')
+					}
+					var margins = {
+						left   : SIZES.margin,
+						top    : ( SIZES.margin + SIZES.pointsbar )
+					}
+					$(l).data('x', thisc.dx)
+						.data('y', thisc.dy)
+						.css({
+							left : ( thisc.x - margins.left ),
+							top : ( thisc.y - margins.top )
+						});
+					
+					$(this).data('x', emptyc.dx)
+						   .data('y', emptyc.dy)
+						   .animate({
+								left : ( emptyc.x - margins.left ),
+								top : ( emptyc.y - margins.top )
+							});
+					//Game.map[this] <=> Game.map[empty]	
+					var tmp = Game.map[thisc.dy][thisc.dx]
+					Game.map[thisc.dy][thisc.dx] = Game.map[emptyc.dy][emptyc.dx];
+					Game.map[emptyc.dy][emptyc.dx] = tmp;
+					if( Game.checkwin() ){
+						Game.win();
+					}
+				}				
+			});
+			// -------------------------------------------
+			
+		},
+		notborder : function(x, y){
+			return (
+				x < Game.width &&
+				x >= 0 &&
+				y < Game.height &&
+				y >= 0
+			);
+		},
+		isemptypoint : function(x, y){
+			return (Game.map[y][x] === EMPTY);
+		},
+		checkbeside : function(x, y){
+			var _x = x + 1;
+			var _y = y;
+			if( Game.notborder(_x, _y) ){
+				if( Game.isemptypoint(_x, _y) ){
+					return {
+						'x' : _x,
+						'y' : _y
+					}
+				}
+			}
+			_x = x - 1;
+			_y = y;
+			if( Game.notborder(_x, _y) ){
+				if( Game.isemptypoint(_x, _y) ){
+					return {
+						'x' : _x,
+						'y' : _y
+					}
+				}
+			}
+			_x = x;
+			_y = y + 1;
+			if( Game.notborder(_x, _y) ){
+				if( Game.isemptypoint(_x, _y) ){
+					return {
+						'x' : _x,
+						'y' : _y
+					}
+				}
+			}
+			_x = x;
+			_y = y - 1;
+			if( Game.notborder(_x, _y) ){
+				if( Game.isemptypoint(_x, _y) ){
+					return { 
+						'x' : _x,
+						'y' : _y
+					}
+				}
+			}
+			return false;
+		},
+		win : function(){
+			// TODO splash win
+			$('#youwin').show();
+			console.log('win (finish)');
+			if( parseInt(localStorage['box5level']) < Game.maxlevelsnum ){
+				localStorage['box5level'] = parseInt(localStorage['box5level']) + 1;
+				setTimeout(function(){
+					$('#youwin').hide();
+				}, 3000);
+			} else {
+				//win all
+			}
+			//$('#points').html(localStorage['box5points']);
+			//Game.run = false;
+		},
+		gameover : function(){
+			//TODO splash gameover 
+			// go to mainmenu
+			console.log('gameover');
+		},	
+		startgame : function(){
+			this.colnum = ( 3 + ( parseInt(localStorage['box5level']) / 3 )|0 );
+			Game.width = Game.height = Game.colnum;
+			SIZES.column = GAMESPACE.X / Game.colnum;
+			
+			
+			this.randmap();
+			this.draw();
+			/*
+			this.startfinish();
+			this.addbroken( parseInt(localStorage['plumbinglevel']) );//добавить разбитые
+			this.draw();
+			setTimeout(function(){
+				Game.firststep();
+			}, 0);
+			*/
+		},
+		init : function(){
+			if(
+				typeof(localStorage['box5points']) === 'undefined' ||
+				typeof(localStorage['box5level']) === 'undefined'
+			){
+				localStorage['box5points'] = 0;
+				localStorage['box5level'] = 0;
+			}
+			$('#points').html(localStorage['box5points']);
+			//this.drawmap();
+		}
+	}
+	$(document).ready(function(){
+		Game.init();
+		
+		DWIDTH = document.body.clientWidth;
+		DHEIGHT	= document.body.clientHeight;
+		SCALINGFACTOR = DWIDTH / 320;
+		BANNERHEIGHT = SCALINGFACTOR * 50;
+		Game.width = Game.height = Game.colnum;
+		//SIZES.column = ( DWIDTH  < 350 )?50:( DWIDTH < 750 )?70:100;
+		GAMESPACE = {
+			X : DWIDTH - ( SIZES.margin * 2 ),
+			Y : DHEIGHT - BANNERHEIGHT - SIZES.pointsbar - ( SIZES.margin * 2 )
+		}
+		SIZES.column = GAMESPACE.X / Game.colnum;
+		$('#map').css({
+			width  : GAMESPACE.X,
+			height : GAMESPACE.Y,
+			left   : SIZES.margin,
+			top    : ( SIZES.margin + SIZES.pointsbar )
+		});
+		$('#youwin').css('width', (DWIDTH - 30 + 'px'));
+		
+		//Game.width = ( GAMESPACE.X / SIZES.column )|0;
+		//Game.height = ( ( GAMESPACE.Y / SIZES.column )|0 ) - 2;
+		
+		Game.startgame();
+	});
+</script>
+</head>
+<body>
+	<div id="mapsplash" class="hidden">
+		<!--
+		<div class="buttn inhistory"></div>
+		<div id="thislevel" class="buttn"></div>
+		<div class="buttn"></div>
+		<div class="buttn"></div>
+		<div class="buttn"></div>
+		<div class="buttn"></div>
+		-->
+	</div>
+	<div id="help"></div>
+	<div id="gamescreen">
+		<div id="pointsbar">Steps: <span id="points">0</span> Level: <span id="level">0</span></div>
+		<div id="map">
+			<div id="p0"></div>
+			<!--
+			<div class="row">
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+			</div>
+			<div class="row">
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+			</div>
+			<div class="row">
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+			</div>
+			<div class="row">
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+			</div>
+			<div class="row">
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+				<div class="column">X</div>
+			</div>
+			-->
+		</div>
+	</div>
+	<div id="youwin" class="hidden">YOU WIN!</div>
+</body>
